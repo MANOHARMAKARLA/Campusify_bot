@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        .chatbox {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            border-radius: 5px;
+        }
+        .chatbox div {
+            margin: 5px 0;
+        }
+        .chatbox .user {
+            text-align: right;
+            color: #4CAF50;
+        }
+        .chatbox .bot {
+            text-align: left;
+            color: #000;
+        }
+        input[type="text"], button {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #file-list {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Chatbot</h1>
+        <form id="selectionForm">
+            <label for="year">Year:</label>
+            <select id="year" name="year" required>
+                <option value="">Select Year</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+            </select>
+
+            <label for="semester">Semester:</label>
+            <select id="semester" name="semester" required>
+                <option value="">Select Semester</option>
+                <option value="1">1st Semester</option>
+                <option value="2">2nd Semester</option>
+            </select>
+        </form>
+
+        <div class="chatbox" id="chatbox"></div>
+
+        <input type="text" id="query" placeholder="Ask your question..." />
+        <button onclick="sendQuery()">Send</button>
+        <button onclick="fetchFiles()">Fetch Files</button>
+
+        <div id="file-list"></div>
+    </div>
+
+    <script>
+        async function sendQuery() {
+            const year = document.getElementById('year').value;
+            const semester = document.getElementById('semester').value;
+            const query = document.getElementById('query').value;
+
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ year, semester, query })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                document.getElementById('chatbox').innerHTML += `<div class="user">${query}</div>`;
+                document.getElementById('chatbox').innerHTML += `<div class="bot">${result.answer || 'No answer found.'}</div>`;
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('chatbox').innerHTML += `<div class="bot">Failed to fetch response.</div>`;
+            }
+        }
+
+        async function fetchFiles() {
+            const year = document.getElementById('year').value;
+            const semester = document.getElementById('semester').value;
+
+            try {
+                const response = await fetch('/files', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ year, semester })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                const fileList = document.getElementById('file-list');
+                fileList.innerHTML = '<h2>Available Files:</h2><ul>';
+                result.files.forEach(file => {
+                    fileList.innerHTML += `<li>${file}</li>`;
+                });
+                fileList.innerHTML += '</ul>';
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('file-list').innerHTML = 'Failed to fetch files.';
+            }
+        }
+    </script>
+</body>
+</html>
